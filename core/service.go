@@ -30,6 +30,8 @@ type Service struct {
 	// Name of the service. Can be anything.
 	Name string `yaml:"name"`
 
+	Label string `yaml:"label"`
+
 	// URL to send the request to
 	URL string `yaml:"url"`
 

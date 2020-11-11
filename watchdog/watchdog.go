@@ -12,8 +12,12 @@ import (
 	"github.com/TwinProduction/gatus/metric"
 )
 
+const (
+	defaultGroupName = "unknown"
+)
+
 var (
-	serviceResults = make(map[string][]*core.Result)
+	groupedServices = make(map[string]map[string][]*core.Result)
 
 	// serviceResultsMutex is used to prevent concurrent map access
 	serviceResultsMutex sync.RWMutex
@@ -27,7 +31,7 @@ var (
 // The reason why the encoding is done here is because we use a mutex to prevent concurrent map access.
 func GetJSONEncodedServiceResults() ([]byte, error) {
 	serviceResultsMutex.RLock()
-	data, err := json.Marshal(serviceResults)
+	data, err := json.Marshal(groupedServices)
 	serviceResultsMutex.RUnlock()
 	return data, err
 }
@@ -56,10 +60,43 @@ func monitor(service *core.Service) {
 		result := service.EvaluateHealth()
 		metric.PublishMetricsForService(service, result)
 		serviceResultsMutex.Lock()
-		serviceResults[service.Name] = append(serviceResults[service.Name], result)
-		if len(serviceResults[service.Name]) > 20 {
-			serviceResults[service.Name] = serviceResults[service.Name][1:]
+
+		serviceLabel := defaultGroupName
+
+		if service.Label != "" {
+			serviceLabel = service.Label
 		}
+
+		if _, ok := groupedServices[serviceLabel]; !ok {
+			groupedServices[serviceLabel] = map[string][]*core.Result{
+				service.Name: {
+					result,
+				},
+			}
+		} else {
+			bucket := groupedServices[serviceLabel]
+			bucket[service.Name] = append(bucket[service.Name], result)
+			if len(bucket[service.Name]) > 20 {
+				bucket[service.Name] = bucket[service.Name][1:]
+			}
+		}
+
+		if !result.Success {
+			if _, ok := groupedServices["failing"]; !ok {
+				groupedServices["failing"] = map[string][]*core.Result{
+					service.Name: {
+						result,
+					},
+				}
+			} else {
+				bucket := groupedServices["failing"]
+				bucket[service.Name] = append(bucket[service.Name], result)
+				if len(bucket[service.Name]) > 20 {
+					bucket[service.Name] = bucket[service.Name][1:]
+				}
+			}
+		}
+
 		serviceResultsMutex.Unlock()
 		var extra string
 		if !result.Success {
