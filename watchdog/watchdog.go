@@ -14,10 +14,11 @@ import (
 
 const (
 	defaultGroupName = "unknown"
+	failingGroupName = "failing"
 )
 
 var (
-	groupedServices = make(map[string]map[string][]*core.Result)
+	servicesGroupedByLabel = make(map[string]map[string][]*core.Result)
 
 	// serviceResultsMutex is used to prevent concurrent map access
 	serviceResultsMutex sync.RWMutex
@@ -31,7 +32,7 @@ var (
 // The reason why the encoding is done here is because we use a mutex to prevent concurrent map access.
 func GetJSONEncodedServiceResults() ([]byte, error) {
 	serviceResultsMutex.RLock()
-	data, err := json.Marshal(groupedServices)
+	data, err := json.Marshal(servicesGroupedByLabel)
 	serviceResultsMutex.RUnlock()
 	return data, err
 }
@@ -46,6 +47,23 @@ func Monitor(cfg *config.Config) {
 }
 
 // monitor monitors a single service in a loop
+
+func appendStatusResult(groupedServices map[string]map[string][]*core.Result, service *core.Service, serviceLabel string, result *core.Result) {
+	if _, ok := groupedServices[serviceLabel]; !ok {
+		groupedServices[serviceLabel] = map[string][]*core.Result{
+			service.Name: {
+				result,
+			},
+		}
+	} else {
+		bucket := groupedServices[serviceLabel]
+		bucket[service.Name] = append(bucket[service.Name], result)
+		if len(bucket[service.Name]) > 20 {
+			bucket[service.Name] = bucket[service.Name][1:]
+		}
+	}
+}
+
 func monitor(service *core.Service) {
 	cfg := config.Get()
 	for {
@@ -67,34 +85,10 @@ func monitor(service *core.Service) {
 			serviceLabel = service.Label
 		}
 
-		if _, ok := groupedServices[serviceLabel]; !ok {
-			groupedServices[serviceLabel] = map[string][]*core.Result{
-				service.Name: {
-					result,
-				},
-			}
-		} else {
-			bucket := groupedServices[serviceLabel]
-			bucket[service.Name] = append(bucket[service.Name], result)
-			if len(bucket[service.Name]) > 20 {
-				bucket[service.Name] = bucket[service.Name][1:]
-			}
-		}
+		appendStatusResult(servicesGroupedByLabel, service, serviceLabel, result)
 
 		if !result.Success {
-			if _, ok := groupedServices["failing"]; !ok {
-				groupedServices["failing"] = map[string][]*core.Result{
-					service.Name: {
-						result,
-					},
-				}
-			} else {
-				bucket := groupedServices["failing"]
-				bucket[service.Name] = append(bucket[service.Name], result)
-				if len(bucket[service.Name]) > 20 {
-					bucket[service.Name] = bucket[service.Name][1:]
-				}
-			}
+			appendStatusResult(servicesGroupedByLabel, service, failingGroupName, result)
 		}
 
 		serviceResultsMutex.Unlock()
@@ -103,8 +97,9 @@ func monitor(service *core.Service) {
 			extra = fmt.Sprintf("responseBody=%s", result.Body)
 		}
 		log.Printf(
-			"[watchdog][monitor] Monitored serviceName=%s; success=%v; errors=%d; requestDuration=%s; %s",
+			"[watchdog][monitor] Monitored serviceName=%s; label=%v; success=%v; errors=%d; requestDuration=%s; %s",
 			service.Name,
+			serviceLabel,
 			result.Success,
 			len(result.Errors),
 			result.Duration.Round(time.Millisecond),
