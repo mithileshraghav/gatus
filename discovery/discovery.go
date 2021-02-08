@@ -13,15 +13,22 @@ import (
 func GetServices(cfg *config.Config) []*core.Service {
 	client := k8s.NewClient(cfg.K8sClusterMode)
 	services := k8s.GetServices(client, "services")
-	svcs := make([]*core.Service, 0)
+	result := make([]*core.Service, 0)
 	for _, s := range services {
 		if exclude(cfg.ExcludeSuffix, s.Name) {
 			continue
 		}
-		svc := core.Service{Name: s.Name, URL: fmt.Sprintf("http://%s%s/health", s.Name, cfg.K8SServiceSuffix), Interval: cfg.K8SServiceConfig.Interval, Conditions: cfg.K8SServiceConfig.Conditions}
-		svcs = append(svcs, &svc)
+		svc := core.Service{
+			Name:       s.Name,
+			URL:        fmt.Sprintf("http://%s%s/health", s.Name, cfg.K8SServiceSuffix),
+			Interval:   cfg.K8SServiceConfig.Interval,
+			Conditions: cfg.K8SServiceConfig.Conditions,
+			Label:      strings.ToLower(s.GetLabels()[cfg.K8SServiceConfig.Label]),
+		}
+
+		result = append(result, &svc)
 	}
-	return svcs
+	return result
 }
 
 func exclude(excludeList []string, name string) bool {

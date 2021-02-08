@@ -12,8 +12,13 @@ import (
 	"github.com/TwinProduction/gatus/metric"
 )
 
+const (
+	defaultGroupName = "unknown"
+	failingGroupName = "failing"
+)
+
 var (
-	serviceResults = make(map[string][]*core.Result)
+	servicesGroupedByLabel = make(map[string]map[string][]*core.Result)
 
 	// serviceResultsMutex is used to prevent concurrent map access
 	serviceResultsMutex sync.RWMutex
@@ -27,7 +32,7 @@ var (
 // The reason why the encoding is done here is because we use a mutex to prevent concurrent map access.
 func GetJSONEncodedServiceResults() ([]byte, error) {
 	serviceResultsMutex.RLock()
-	data, err := json.Marshal(serviceResults)
+	data, err := json.Marshal(servicesGroupedByLabel)
 	serviceResultsMutex.RUnlock()
 	return data, err
 }
@@ -42,6 +47,23 @@ func Monitor(cfg *config.Config) {
 }
 
 // monitor monitors a single service in a loop
+
+func appendStatusResult(groupedServices map[string]map[string][]*core.Result, service *core.Service, serviceLabel string, result *core.Result) {
+	if _, ok := groupedServices[serviceLabel]; !ok {
+		groupedServices[serviceLabel] = map[string][]*core.Result{
+			service.Name: {
+				result,
+			},
+		}
+	} else {
+		bucket := groupedServices[serviceLabel]
+		bucket[service.Name] = append(bucket[service.Name], result)
+		if len(bucket[service.Name]) > 20 {
+			bucket[service.Name] = bucket[service.Name][1:]
+		}
+	}
+}
+
 func monitor(service *core.Service) {
 	cfg := config.Get()
 	for {
@@ -56,18 +78,28 @@ func monitor(service *core.Service) {
 		result := service.EvaluateHealth()
 		metric.PublishMetricsForService(service, result)
 		serviceResultsMutex.Lock()
-		serviceResults[service.Name] = append(serviceResults[service.Name], result)
-		if len(serviceResults[service.Name]) > 20 {
-			serviceResults[service.Name] = serviceResults[service.Name][1:]
+
+		serviceLabel := defaultGroupName
+
+		if service.Label != "" {
+			serviceLabel = service.Label
 		}
+
+		appendStatusResult(servicesGroupedByLabel, service, serviceLabel, result)
+
+		if !result.Success {
+			appendStatusResult(servicesGroupedByLabel, service, failingGroupName, result)
+		}
+
 		serviceResultsMutex.Unlock()
 		var extra string
 		if !result.Success {
 			extra = fmt.Sprintf("responseBody=%s", result.Body)
 		}
 		log.Printf(
-			"[watchdog][monitor] Monitored serviceName=%s; success=%v; errors=%d; requestDuration=%s; %s",
+			"[watchdog][monitor] Monitored serviceName=%s; label=%v; success=%v; errors=%d; requestDuration=%s; %s",
 			service.Name,
+			serviceLabel,
 			result.Success,
 			len(result.Errors),
 			result.Duration.Round(time.Millisecond),
