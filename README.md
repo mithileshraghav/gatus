@@ -449,3 +449,15 @@ There are three main reasons why you might want to disable the monitoring lock:
 technically, if you create 100 services with a 1 seconds interval, Gatus will send 100 requests per second)
 - You have a _lot_ of services to monitor
 - You want to test multiple services at very short interval (< 5s)
+
+## Local development
+
+Run: 
+
+```
+cd ui && npm run build
+
+go build
+
+./gatus
+```
