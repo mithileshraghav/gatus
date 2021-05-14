@@ -455,7 +455,7 @@ technically, if you create 100 services with a 1 seconds interval, Gatus will se
 Run: 
 
 ```
-cd ui && npm run build
+cd ui && npm run local-build
 
 go build
 
