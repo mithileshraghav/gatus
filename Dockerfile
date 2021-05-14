@@ -5,7 +5,6 @@ ADD ui/public ./public
 ADD ui/src ./src
 ADD ui/package-lock.json ./
 ADD ui/package.json ./
-ENV REACT_APP_SERVER_URL=http://localhost:8080/
 RUN npm install
 RUN npm run build
 
