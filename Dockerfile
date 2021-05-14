@@ -5,6 +5,7 @@ ADD ui/public ./public
 ADD ui/src ./src
 ADD ui/package-lock.json ./
 ADD ui/package.json ./
+RUN mkdir ../static
 RUN npm install
 RUN npm run build
 
@@ -19,7 +20,7 @@ RUN apk --update add ca-certificates
 FROM scratch
 COPY --from=builder /app/gatus .
 COPY --from=builder /app/config.yaml ./config/config.yaml
-COPY --from=appbuilder /app/build static/
+COPY --from=appbuilder /static static/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 ENV PORT=8080
 EXPOSE ${PORT}
