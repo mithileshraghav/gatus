@@ -2,7 +2,7 @@ import TabList from "../tab/TabList";
 import ServiceStatusList from "../service/ServiceStatusList";
 import { useEffect, useState } from "react";
 import Grid from "@material-ui/core/Grid";
-import { CircularProgress, makeStyles, Paper } from "@material-ui/core";
+import { CircularProgress, makeStyles, Paper, Typography } from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
   paperContainer: {
@@ -22,14 +22,15 @@ function Example() {
   const [myObj, setMyObj] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   let [error, setError] = useState(null);
-  const interval = 10000;
+  const refreshSeconds = 10;
+  const milliseconds = 1000;
+  const interval = refreshSeconds * milliseconds;
 
   const fetchData = () => {
     fetch(`/api/v1/results`)
       .then((res) => res.json())
       .then(
         (result) => {
-          console.log("hello")
           setMyObj(result);
           setIsLoading(false);
         },
@@ -47,7 +48,7 @@ function Example() {
     return () => {
       clearInterval(timer)
     }
-  }, []);
+  }, [interval]);
 
 
 
@@ -100,6 +101,9 @@ function Example() {
             services={services}
             click={setSelectedService}
           ></ServiceStatusList>
+        </Grid>
+        <Grid item xs={12}>
+          <Typography>Refresh Interval: {`${refreshSeconds} s`}</Typography>
         </Grid>
       </Grid>
     </Paper>
