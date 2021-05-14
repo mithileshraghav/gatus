@@ -66,17 +66,26 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+function prettifyTimestamp(timestamp) {
+  let date = new Date(timestamp);
+  let YYYY = date.getFullYear();
+  let MM = ((date.getMonth() + 1) < 10 ? "0" : "") + "" + (date.getMonth() + 1);
+  let DD = ((date.getDate()) < 10 ? "0" : "") + "" + (date.getDate());
+  let hh = ((date.getHours()) < 10 ? "0" : "") + "" + (date.getHours());
+  let mm = ((date.getMinutes()) < 10 ? "0" : "") + "" + (date.getMinutes());
+  let ss = ((date.getSeconds()) < 10 ? "0" : "") + "" + (date.getSeconds());
+  return YYYY + "-" + MM + "-" + DD + " " + hh + ":" + mm + ":" + ss;
+}
+
 function ServiceDetail(props) {
   const classes = useStyles();
   const status = `${props.data.status}`;
   const hostname = `${props.data.hostname}`;
   const duration = `${parseInt(props.data.duration / 1000000)} ms`;
-  const timestamp = `${new Date(props.data.timestamp).toLocaleString()}`;
+  const timestamp = prettifyTimestamp(props.data.timestamp);
   const conditions = props.data["condition-results"];
-
-  const cardClasses = `${classes.cardContent} ${
-    props.data.success ? classes.successIndicator : classes.failureIndicator
-  }`;
+  const cardClasses = `${classes.cardContent} ${props.data.success ? classes.successIndicator : classes.failureIndicator
+    }`;
 
   return (
     <Card className={classes.cardContainer}>
@@ -153,9 +162,8 @@ function ServiceStatus(props) {
   const [open, setOpen] = React.useState(false);
   const [scroll, setScroll] = React.useState("paper");
 
-  const paperClasses = `${classes.paper} ${
-    props.success ? classes.successContainer : classes.failureContainer
-  }`;
+  const paperClasses = `${classes.paper} ${props.success ? classes.successContainer : classes.failureContainer
+    }`;
 
   const handleClickOpen = (scrollType) => () => {
     setOpen(true);
@@ -209,7 +217,7 @@ function ServiceStatus(props) {
               alignItems="center"
               spacing={1}
             >
-              {props.detailList.map((details, index) => (
+              {props.detailList.reverse().map((details, index) => (
                 <Grid item>
                   <ServiceDetail key={index} data={details} />
                 </Grid>
