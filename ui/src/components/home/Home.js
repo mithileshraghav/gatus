@@ -25,7 +25,7 @@ function Example() {
   const interval = 10000;
 
   const fetchData = () => {
-    fetch(`/api/v1/results`)
+    fetch(`http://localhost:3004/api/v1/results`)
       .then((res) => res.json())
       .then(
         (result) => {
