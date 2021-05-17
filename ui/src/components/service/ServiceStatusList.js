@@ -239,7 +239,6 @@ function ServiceStatus(props) {
 
 function ServiceStatusList(props) {
   const sortedDetailList = (service) => {
-    console.log(props.services[service]);
     if (props.services[service] === undefined) {
       return [];
     }
