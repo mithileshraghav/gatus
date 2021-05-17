@@ -173,7 +173,9 @@ function ServiceStatus(props) {
   const handleClose = () => {
     setOpen(false);
   };
-
+  const sortedDetailList = props.detailList.sort(function (a, b) {
+    return a.timestamp.localeCompare(b.timestamp);
+  });
   const descriptionElementRef = React.useRef(null);
   React.useEffect(() => {
     if (open) {
@@ -217,7 +219,7 @@ function ServiceStatus(props) {
               alignItems="center"
               spacing={1}
             >
-              {props.detailList.reverse().map((details, index) => (
+              {sortedDetailList.reverse().map((details, index) => (
                 <Grid item>
                   <ServiceDetail key={index} data={details} />
                 </Grid>
