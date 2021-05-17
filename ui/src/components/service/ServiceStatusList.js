@@ -69,11 +69,11 @@ const useStyles = makeStyles((theme) => ({
 function prettifyTimestamp(timestamp) {
   let date = new Date(timestamp);
   let YYYY = date.getFullYear();
-  let MM = ((date.getMonth() + 1) < 10 ? "0" : "") + "" + (date.getMonth() + 1);
-  let DD = ((date.getDate()) < 10 ? "0" : "") + "" + (date.getDate());
-  let hh = ((date.getHours()) < 10 ? "0" : "") + "" + (date.getHours());
-  let mm = ((date.getMinutes()) < 10 ? "0" : "") + "" + (date.getMinutes());
-  let ss = ((date.getSeconds()) < 10 ? "0" : "") + "" + (date.getSeconds());
+  let MM = (date.getMonth() + 1 < 10 ? "0" : "") + "" + (date.getMonth() + 1);
+  let DD = (date.getDate() < 10 ? "0" : "") + "" + date.getDate();
+  let hh = (date.getHours() < 10 ? "0" : "") + "" + date.getHours();
+  let mm = (date.getMinutes() < 10 ? "0" : "") + "" + date.getMinutes();
+  let ss = (date.getSeconds() < 10 ? "0" : "") + "" + date.getSeconds();
   return YYYY + "-" + MM + "-" + DD + " " + hh + ":" + mm + ":" + ss;
 }
 
@@ -84,8 +84,9 @@ function ServiceDetail(props) {
   const duration = `${parseInt(props.data.duration / 1000000)} ms`;
   const timestamp = prettifyTimestamp(props.data.timestamp);
   const conditions = props.data["condition-results"];
-  const cardClasses = `${classes.cardContent} ${props.data.success ? classes.successIndicator : classes.failureIndicator
-    }`;
+  const cardClasses = `${classes.cardContent} ${
+    props.data.success ? classes.successIndicator : classes.failureIndicator
+  }`;
 
   return (
     <Card className={classes.cardContainer}>
@@ -162,8 +163,9 @@ function ServiceStatus(props) {
   const [open, setOpen] = React.useState(false);
   const [scroll, setScroll] = React.useState("paper");
 
-  const paperClasses = `${classes.paper} ${props.success ? classes.successContainer : classes.failureContainer
-    }`;
+  const paperClasses = `${classes.paper} ${
+    props.success ? classes.successContainer : classes.failureContainer
+  }`;
 
   const handleClickOpen = (scrollType) => () => {
     setOpen(true);
@@ -173,9 +175,7 @@ function ServiceStatus(props) {
   const handleClose = () => {
     setOpen(false);
   };
-  const sortedDetailList = props.detailList.sort(function (a, b) {
-    return a.timestamp.localeCompare(b.timestamp);
-  });
+
   const descriptionElementRef = React.useRef(null);
   React.useEffect(() => {
     if (open) {
@@ -219,7 +219,7 @@ function ServiceStatus(props) {
               alignItems="center"
               spacing={1}
             >
-              {sortedDetailList.reverse().map((details, index) => (
+              {props.detailList.map((details, index) => (
                 <Grid item>
                   <ServiceDetail key={index} data={details} />
                 </Grid>
@@ -238,13 +238,19 @@ function ServiceStatus(props) {
 }
 
 function ServiceStatusList(props) {
-  const lastIndex = (service) => props.services[service].length - 1;
-  const latestStatusObj = (service) =>
-    props.services[service][lastIndex(service)];
-
+  const sortedDetailList = (service) => {
+    console.log(props.services[service]);
+    if (props.services[service] === undefined) {
+      return [];
+    }
+    return props.services[service].sort(function (a, b) {
+      return b.timestamp.localeCompare(a.timestamp);
+    });
+  };
+  const latestStatusObj = (service) => sortedDetailList(service)[0];
   let selectedServiceDetails = [];
   if (props.selectedService != null) {
-    selectedServiceDetails = props.services[props.selectedService] || [];
+    selectedServiceDetails = sortedDetailList(props.selectedService) || [];
   }
 
   return (
