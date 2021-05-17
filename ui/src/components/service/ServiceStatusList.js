@@ -43,10 +43,10 @@ const useStyles = makeStyles((theme) => ({
     fontSize: "15px",
   },
   successIndicator: {
-    borderRight: "5px solid #83BD0F",
+    border: "1px solid #83BD0F",
   },
   failureIndicator: {
-    borderRight: "5px solid #DB324D",
+    border: "1px solid #DB324D",
   },
   ul: {
     padding: "0",
@@ -64,6 +64,9 @@ const useStyles = makeStyles((theme) => ({
     color: "white",
     fontWeight: "bold",
   },
+  text: {
+    paddingLeft: "10px"
+  }
 }));
 
 function prettifyTimestamp(timestamp) {
@@ -84,14 +87,11 @@ function ServiceDetail(props) {
   const duration = `${parseInt(props.data.duration / 1000000)} ms`;
   const timestamp = prettifyTimestamp(props.data.timestamp);
   const conditions = props.data["condition-results"];
-  const cardClasses = `${classes.cardContent} ${
-    props.data.success ? classes.successIndicator : classes.failureIndicator
-  }`;
 
   return (
-    <Card className={classes.cardContainer}>
+    <Card className={`${classes.cardContainer} ${props.data.success? classes.successIndicator : classes.failureIndicator}`}>
       <CardContent>
-        <div className={cardClasses}>
+        <div>
           <div className="row">
             <div className="card-content">
               <table className={classes.table}>
@@ -133,9 +133,9 @@ function ServiceDetail(props) {
               <li
                 key={index}
                 className={
-                  conditionItem["success"]
+                  `${classes.text} ${conditionItem["success"]
                     ? classes.successExpression
-                    : classes.failureExpression
+                    : classes.failureExpression}`
                 }
               >
                 {conditionItem["condition"]}
