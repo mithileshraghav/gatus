@@ -1,3 +1,7 @@
 bin
 .idea
 gatus
+node_modules
+build
+static
+.DS_Store

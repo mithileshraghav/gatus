@@ -1,3 +1,5 @@
 example
 .github
 .idea
+node_modules
+build
