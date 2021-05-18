@@ -15,11 +15,11 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-function Example() {
+function Home() {
   const classes = useStyles();
 
   let services = {};
-  const [myObj, setMyObj] = useState({});
+  const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   let [error, setError] = useState(null);
   const refreshSeconds = 10;
@@ -31,7 +31,7 @@ function Example() {
       .then((res) => res.json())
       .then(
         (result) => {
-          setMyObj(result);
+          setData(result);
           setIsLoading(false);
         },
         (error) => {
@@ -52,7 +52,7 @@ function Example() {
 
 
 
-  const tempList = Object.keys(myObj);
+  const tempList = Object.keys(data);
   const defaultSelectedTabKey = "failing";
   const defaultSelectedServiceKey = null;
 
@@ -61,7 +61,7 @@ function Example() {
     defaultSelectedServiceKey
   );
 
-  services = myObj[selectedTeam];
+  services = data[selectedTeam];
 
   if (isLoading) {
     return (
@@ -110,4 +110,4 @@ function Example() {
   );
 }
 
-export default Example;
+export default Home;
